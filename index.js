@@ -8,6 +8,8 @@ import {GPTScript, RunEventType} from "@gptscript-ai/gptscript";
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from "ffmpeg-static";
 import path from 'path';
+const PORT = process.env.PORT || 8080;
+
 
 const app = express();
 app.use(cors());
@@ -141,4 +143,6 @@ app.get('/samples', (req, res) => {
   res.json(stories);
 });
 
-app.listen(8080, () => console.log('Listening on port 8080'));
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

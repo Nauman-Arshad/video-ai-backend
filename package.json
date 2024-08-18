@@ -1,9 +1,16 @@
 {
   "name": "backend",
-  "module": "index.js",
+  "version": "1.0.0",
+  "description": "Express backend for Video AI Project",
+  "main": "index.js",
   "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "nodemon": "^2.0.22"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
