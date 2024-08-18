@@ -4,12 +4,12 @@ import express from 'express';
 import uniqid from 'uniqid';
 import fs from 'fs';
 import cors from 'cors';
-import {GPTScript, RunEventType} from "@gptscript-ai/gptscript";
+import { GPTScript, RunEventType } from "@gptscript-ai/gptscript";
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from "ffmpeg-static";
 import path from 'path';
-const PORT = process.env.PORT || 8080;
 
+const PORT = process.env.PORT || 8080;
 
 const app = express();
 app.use(cors());
@@ -24,18 +24,16 @@ app.get('/test', (req, res) => {
 app.get('/create-story', async (req, res) => {
   const url = decodeURIComponent(req.query.url);
   const dir = uniqid();
-  const path = './stories/'+dir;
-  fs.mkdirSync(path, {recursive: true});
+  const storyPath = `./stories/${dir}`;
+  fs.mkdirSync(storyPath, { recursive: true });
 
-  console.log({
-    url,
-  });
+  console.log({ url });
 
   const opts = {
-    input: `--url ${url} --dir ${path}`,
+    input: `--url ${url} --dir ${storyPath}`,
     disableCache: true,
   };
-  try{
+  try {
     const run = await g.run('./story.gpt', opts);
 
     run.on(RunEventType.Event, ev => {
@@ -45,29 +43,28 @@ app.get('/create-story', async (req, res) => {
     });
     const result = await run.text();
     return res.json(dir);
-  } catch(e) {
+  } catch (e) {
     console.error(e);
-    return  res.json('error');
+    return res.json('error');
   }
 });
 
 app.get('/build-video', async (req, res) => {
-  // const id = 't61p9btplz8rhb02';
   const id = req.query.id;
   if (!id) {
-    res.json('error. missing id');
+    return res.json('error. missing id');
   }
-  const dir = './stories/'+id;
-  if (!fs.existsSync(dir+'/1.png')) {
-    fs.renameSync(dir+'/b-roll-1.png', dir+'/1.png');
-    fs.renameSync(dir+'/b-roll-2.png', dir+'/2.png');
-    fs.renameSync(dir+'/b-roll-3.png', dir+'/3.png');
-    fs.renameSync(dir+'/voiceover-1.mp3', dir+'/1.mp3');
-    fs.renameSync(dir+'/voiceover-2.mp3', dir+'/2.mp3');
-    fs.renameSync(dir+'/voiceover-3.mp3', dir+'/3.mp3');
-    fs.renameSync(dir+'/voiceover-1.txt', dir+'/transcription-1.json');
-    fs.renameSync(dir+'/voiceover-2.txt', dir+'/transcription-2.json');
-    fs.renameSync(dir+'/voiceover-3.txt', dir+'/transcription-3.json');
+  const dir = `./stories/${id}`;
+  if (!fs.existsSync(`${dir}/1.png`)) {
+    fs.renameSync(`${dir}/b-roll-1.png`, `${dir}/1.png`);
+    fs.renameSync(`${dir}/b-roll-2.png`, `${dir}/2.png`);
+    fs.renameSync(`${dir}/b-roll-3.png`, `${dir}/3.png`);
+    fs.renameSync(`${dir}/voiceover-1.mp3`, `${dir}/1.mp3`);
+    fs.renameSync(`${dir}/voiceover-2.mp3`, `${dir}/2.mp3`);
+    fs.renameSync(`${dir}/voiceover-3.mp3`, `${dir}/3.mp3`);
+    fs.renameSync(`${dir}/voiceover-1.txt`, `${dir}/transcription-1.json`);
+    fs.renameSync(`${dir}/voiceover-2.txt`, `${dir}/transcription-2.json`);
+    fs.renameSync(`${dir}/voiceover-3.txt`, `${dir}/transcription-3.json`);
   }
 
   const images = ['1.png', '2.png', '3.png'];
@@ -80,16 +77,14 @@ app.get('/build-video', async (req, res) => {
 
   for (let i = 0; i < images.length; i++) {
     const inputImage = path.join(dir, images[i]);
-    const inputAudio = path.join(dir, audio[i])
+    const inputAudio = path.join(dir, audio[i]);
     const inputTranscription = path.join(dir, transcriptions[i]);
     const outputVideo = path.join(dir, `output_${i}.mp4`);
 
-    // read the transcription file
     const transcription = JSON.parse(fs.readFileSync(inputTranscription, 'utf8'));
     const words = transcription.words;
     const duration = parseFloat(transcription.duration).toFixed(2);
 
-    // Build the drawtext filter string
     let drawtextFilter = '';
     words.forEach(wordInfo => {
       const word = wordInfo.word.replace(/'/g, "\\'").replace(/"/g, '\\"');
@@ -97,7 +92,6 @@ app.get('/build-video', async (req, res) => {
       const end = parseFloat(wordInfo.end).toFixed(2);
       drawtextFilter += `drawtext=text='${word}':fontcolor=white:fontsize=96:borderw=4:bordercolor=black:x=(w-text_w)/2:y=(h*3/4)-text_h:enable='between(t\\,${start}\\,${end})',`;
     });
-    // remove last comma
     drawtextFilter = drawtextFilter.slice(0, -1);
 
     console.log(`Processing: ${inputImage} and ${inputAudio}`);
